@@ -35,6 +35,18 @@ var Direction = function(dec, inc, length) {
 
 }
 
+Direction.prototype.unit = function() {
+
+  return new Direction(this.dec, this.inc);
+
+}
+
+Direction.prototype.paleoLatitude = function() {
+
+  return Math.atan(Math.tan(this.inc * RADIANS) / 2) / RADIANS;
+
+}
+
 Direction.prototype.toCartesian = function() {
 
   // Convert dec, inc to radians
@@ -74,13 +86,7 @@ var fisherianDistribution = function(n, k) {
     directions.push(new pseudoDirection(k));
   }
 
-  return directions;
+  return new Distribution(directions);
 
 }
-
-testData.forEach(function(x) {
-
-  console.log(fisherianDistribution(x.N, x.K));
-
-});
 
