@@ -1,66 +1,6 @@
 const RADIANS = Math.PI / 180;
+const DEGREE_SYMBOL = "\u00B0";
 const __DEBUG__ = true;
-
-var Coordinates = function(x, y, z) {
-
-  this.x = x;
-  this.y = y;
-  this.z = z;
-
-  this.length = Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
-
-}
-
-Coordinates.prototype.toDirection = function() {
-
-  var dec = (360 + (Math.atan2(this.y, this.x) / RADIANS)) % 360; 
-  var inc = Math.asin(this.z / this.length) / RADIANS;
-	
-  return new Direction(
-    dec,
-    inc,
-    this.length
-  );
-
-
-}
-
-var Direction = function(dec, inc, length) {
-
-  this.dec = dec;
-  this.inc = inc;
-
-  // Implicitly assume unit weight
-  this.length = length || 1;
-
-}
-
-Direction.prototype.unit = function() {
-
-  return new Direction(this.dec, this.inc);
-
-}
-
-Direction.prototype.paleoLatitude = function() {
-
-  return Math.atan(Math.tan(this.inc * RADIANS) / 2) / RADIANS;
-
-}
-
-Direction.prototype.toCartesian = function() {
-
-  // Convert dec, inc to radians
-  var dec = this.dec * RADIANS;
-  var inc = this.inc * RADIANS;
-
-  // Calculate Cartesian coordinates
-  return new Coordinates(
-    this.length * Math.cos(dec) * Math.cos(inc),
-    this.length * Math.sin(dec) * Math.cos(inc),
-    this.length * Math.sin(inc)
-  );
-
-}
 
 var pseudoDirection = function(k) {
 
@@ -90,3 +30,4 @@ var fisherianDistribution = function(n, k) {
 
 }
 
+hemispherePlot("hemispherePlot", fisherianDistribution(10, 100));

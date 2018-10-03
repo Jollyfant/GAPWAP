@@ -19,6 +19,17 @@ var Distribution = function(directions) {
 
 }
 
+Distribution.prototype.rotateTo = function(azimuth, plunge) {
+
+  /*
+   * Function Distribution.rotateTo
+   * Rotates a distribution to a specific azimuth, plunge and returns a new distribution
+   */
+
+  return new Distribution(this.directions.map(direction => direction.rotateTo(azimuth, plunge)));
+
+}
+
 Distribution.prototype.dispersion = function(N, R) {
 
   return (N - 1) / (N - R);
@@ -51,6 +62,6 @@ Distribution.prototype.meanDirection = function() {
 
   });
 
-  return new Direction(xSum, ySum, zSum);
+  return new Coordinates(xSum, ySum, zSum).toDirection();
 
 }
