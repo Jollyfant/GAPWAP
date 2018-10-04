@@ -18,6 +18,38 @@ var Distribution = function(vectors) {
 
 }
 
+var fisherianDistribution = function(Class, n, k) {
+
+  function pseudoDirection(vectorType, k) {
+
+    // Get a random declination (0 inclusive; 1 exclusive)
+    var x = 2 * Math.PI * Math.random();
+	  
+    // Get a random inclination
+    var L = Math.exp(-2 * k);
+    var a = (Math.random() * (1 - L) + L);
+    var fac = Math.sqrt(-Math.log(a) / (2 * k));
+    var y = 90 - (2 * Math.asin(fac));
+    
+    // Return the appropriate vector class (Pole or Direction)
+    return new vectorType(
+      x / RADIANS,
+      y / RADIANS
+    );
+
+  }
+
+  var vectors = new Array();
+	
+  // Draw N pseudo-random samples
+  for(var i = 0; i < n; i++) { 
+    vectors.push(pseudoDirection(Class.prototype.vectorType, k));
+  }
+
+  return new Class(vectors);
+
+}
+
 var PoleDistribution = function(poles) {
 
   /*
@@ -254,9 +286,9 @@ Distribution.prototype.meanDirection = function() {
   var ySum = 0
   var zSum = 0;
 
-  this.vectors.forEach(function(direction) {
+  this.vectors.forEach(function(vector) {
 
-    var coordinates = direction.toCartesian();
+    var coordinates = vector.toCartesian();
 
     xSum += coordinates.x;
     ySum += coordinates.y;
