@@ -1,13 +1,29 @@
+"use strict";
+
+const HIGHCHARTS_BLUE = "#7CB5EC";
+const HIGHCHARTS_BLACK = "#434348";
+const HIGHCHARTS_GREEN = "#90ED7D";
+const HIGHCHARTS_ORANGE = "#F7A35C";
+const HIGHCHARTS_PURPLE = "#8085E9";
+const HIGHCHARTS_CYAN = "#91E8E1";
+const HIGHCHARTS_PINK = "#F15C80";
+const HIGHCHARTS_YELLOW = "#E4D354";
+const HIGHCHARTS_TURQUOISE = "#2B908F";
+const HIGHCHARTS_RED = "#F45B5B";
+const HIGHCHARTS_WHITE = "#FFFFFF";
+
+Highcharts.seriesTypes.line.prototype.requireSorting = false;
 
 function projectInclination(inc) {
 
   /*
    * Function projectInclination
    * Converts the inclination to a project inclination (equal area; equal angle)
+   * used in the equal area projection plots
    */
 
-  const PROJECTION_TYPE = "AREA";
-
+  // Value can be treated as being absolute since the
+  // lower & upper hemisphere are both being projected
   var inc = Math.abs(inc);
 
   switch(PROJECTION_TYPE) {
@@ -39,31 +55,116 @@ function hemispherePlot(id, distribution) {
 
   }
 
+  function getVGPTooltip() {
+
+    /*
+     * Function hemispherePlot::getVGPTooltip
+     * Handles tooltip for hemisphere plot for poles
+     */
+
+    return new Array(
+      this.series.name,
+      "<b>Longitude: </b>" + this.point.lng.toFixed(1),
+      "<b>Latitude: </b>" + this.point.lat.toFixed(1)
+    ).join("<br>");
+
+  }
+
   function getDIRTooltip() {
 
     /*
      * Function hemispherePlot::getDIRTooltip
-     * Handles tooltip for hemisphere plot
+     * Handles tooltip for hemisphere plot for directions
      */
 
     return new Array(
-      "<b>Declination: </b>" + this.x.toFixed(1),
+      this.series.name,
+      "<b>Declination: </b>" + this.point.dec.toFixed(1),
       "<b>Inclination: </b>" + this.point.inc.toFixed(1)
     ).join("<br>");
 
   }
 
-  function prepareDirectionData(direction) {
+  function getTooltip(constructor) {
+
+    /*
+     * Function hemispherePlot::getTooltip
+     * Returns the tooltip callback as a function of the constructor
+     */
+
+    if(constructor === PoleDistribution) {
+      return getVGPTooltip;
+    } else if(constructor === DirectionDistribution) {
+      return getDIRTooltip;
+    }
+
+  }
+
+  function prepareDirectionData(direction, index) {
 
     /*
      * Function hemispherePlot::prepareData
      * Prepares directional data (dec, inc) for plotting in hemisphere plot
      */
 
-    return {
-      "x": direction.dec,
-      "y": projectInclination(direction.inc),
-      "inc": direction.inc
+    function getMarker(value) {
+
+      /*
+       * Function hemispherePlot::prepareData::getMarker
+       * Returns different markers for different hemispheres
+       */
+
+      var markerColor = (index === undefined ? HIGHCHARTS_BLACK : HIGHCHARTS_BLUE);
+
+      if(value < 0) {
+        return new Object({
+          "lineColor": markerColor,
+          "fillColor": HIGHCHARTS_WHITE
+        });
+      } else {
+        return new Object({
+          "lineColor": markerColor,
+          "fillColor": markerColor
+        });
+      }
+
+    }
+
+    if(direction instanceof Direction) {
+      return new Object({
+        "x": direction.dec,
+        "y": projectInclination(direction.inc),
+        "dec": direction.dec,
+        "inc": direction.inc,
+        "marker": getMarker(direction.inc)
+      });
+    } else if(direction instanceof Pole) {
+      return new Object({
+        "x": direction.lng,
+        "y": projectInclination(direction.lat),
+        "lng": direction.lng,
+        "lat": direction.lat,
+        "marker": getMarker(direction.lat)
+      });
+    } else {
+      throw(new Exception("Got unexpected constructor."));
+    }
+
+  }
+  
+  function getTitle(constructor) {
+
+    /*
+     * Function hemispherePlot::getTitle
+     * Returns the title as a function of the constructor
+     */
+
+    if(constructor === PoleDistribution) {
+      return "Geomagnetic Poles";
+    } else if(constructor === DirectionDistribution) {
+      return "Geomagnetic Directions";
+    } else {
+      throw(new Exception("Got unexpected constructor."));
     }
 
   }
@@ -75,21 +176,23 @@ function hemispherePlot(id, distribution) {
     throw(new Exception("Input is not of class Distribution."));
   }
 
-  var distribution = distribution.rotateTo(0, 0);
-
   // Create the HighCharts data structures
-  var data = distribution.directions.map(prepareDirectionData);
-  var mean = new Array(prepareDirectionData(distribution.mean));
+  var data = distribution.vectors.map(prepareDirectionData);
+  var mean = prepareDirectionData(distribution.mean);
+
+  // Get the confidence interval around the mean
+  var ellipse = distribution.getConfidenceEllipse().map(prepareDirectionData);
     
   Highcharts.chart(id, {
     "chart": {
-      "polar": true
+      "polar": true,
+      "animation": ENABLE_ANIMATION,
     },
     "tooltip": {
-      "formatter": getDIRTooltip
+      "formatter": getTooltip(distribution.constructor)
     },
     "subtitle": {
-      "text": "ChRM Directions",
+      "text": getTitle(distribution.constructor),
       "style": { 
         "fontSize": "16px"
       }
@@ -139,7 +242,7 @@ function hemispherePlot(id, distribution) {
       }
     },
     "series": [{
-      "name": "Magnetic Directions",
+      "name": getTitle(distribution.constructor),
       "data": data,
       "type": "scatter",
       "marker": {
@@ -147,12 +250,23 @@ function hemispherePlot(id, distribution) {
         "lineWidth": 1,
       }
     }, {
-      "name": "Mean",
-      "data": mean,
+      "name": "Mean Vector",
+      "data": new Array(mean),
       "type": "scatter",
       "marker": {
+        "radius": 6,
         "symbol": "circle",
-        "lineWidth": 1,
+        "lineWidth": 2,
+      }
+    }, {
+      "name": "95% Confidence Interval",
+      "data": ellipse,
+      "type": "line",
+      "color": HIGHCHARTS_ORANGE,
+      "enableMouseTracking": false,
+      "dashStyle": "ShortDash",
+      "marker": {
+        "enabled": false
       }
     }]
   });

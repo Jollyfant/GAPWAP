@@ -13,6 +13,24 @@ var Coordinates = function(x, y, z) {
 
 }
 
+Coordinates.prototype.toPole = function() {
+
+  var lng = Math.atan2(this.y, this.x);
+  var lat = Math.asin(this.z / this.length);
+
+  // Keep longitude from [0, 360]
+  if(lng < 0) {
+    lng += 2 * Math.PI;
+  }
+
+  return new Pole(
+    lng / RADIANS,
+    lat / RADIANS,
+    this.length
+  );
+
+}
+
 Coordinates.prototype.toDirection = function() {
 
   /*
