@@ -127,7 +127,7 @@ function hemispherePlot(id, distribution) {
        * Returns different markers for different hemispheres
        */
 
-      var markerColor = (index === undefined ? HIGHCHARTS_BLACK : HIGHCHARTS_BLUE);
+      var markerColor = (index === undefined ? HIGHCHARTS_RED : HIGHCHARTS_BLUE);
 
       if(value < 0) {
         return new Object({
@@ -141,6 +141,10 @@ function hemispherePlot(id, distribution) {
         });
       }
 
+    }
+
+    if(direction === null) {
+      return null;
     }
 
     if(direction instanceof Direction) {
@@ -173,17 +177,18 @@ function hemispherePlot(id, distribution) {
      */
 
     if(constructor === PoleDistribution) {
-      return "Geomagnetic Poles";
+      return "Poles";
     } else if(constructor === DirectionDistribution) {
-      return "Geomagnetic Directions";
+      return "Directions";
     } else {
       throw(new Exception("Got unexpected constructor."));
     }
 
   }
 
-  const ENABLE_45_CUTOFF = false;
+  const ENABLE_45_CUTOFF = true;
   const ENABLE_ANIMATION = false;
+  const ENABLE_DEENEN = true;
 
   if(!(distribution instanceof Distribution)) {
     throw(new Exception("Input is not of class Distribution."));
@@ -195,7 +200,57 @@ function hemispherePlot(id, distribution) {
 
   // Get the confidence interval around the mean
   var ellipse = distribution.getConfidenceEllipse().map(prepareDirectionData);
-    
+
+  if(distribution.constructor === PoleDistribution) {
+    var deenen = distribution.getConfidenceEllipseDeenen().map(prepareDirectionData)
+  }
+
+  var series = [{
+    "name": getTitle(distribution.constructor),
+    "data": data,
+    "type": "scatter",
+    "marker": {
+      "symbol": "circle",
+      "lineWidth": 1,
+    }
+  }, {
+    "name": "Mean",
+    "data": new Array(mean),
+    "type": "scatter",
+    "color": HIGHCHARTS_RED,
+    "marker": {
+      "symbol": "circle",
+      "lineWidth": 2,
+    }
+  }, {
+    "name": "95% Confidence",
+    "data": ellipse,
+    "type": "line",
+    "color": HIGHCHARTS_ORANGE,
+    "enableMouseTracking": false,
+    "dashStyle": "ShortDash",
+    "marker": {
+      "enabled": false
+    }
+  }];
+
+  if(ENABLE_DEENEN && distribution.constructor === PoleDistribution) {
+
+    series.push(new Object({
+      "name": "Deenen Criteria",
+      "data": distribution.getConfidenceEllipseDeenen().map(prepareDirectionData),
+      "type": "line",
+      "color": HIGHCHARTS_GREEN,
+      "enableMouseTracking": false,
+      "dashStyle": "ShortDash",
+      "marker": { 
+        "enabled": false
+      } 
+    }));
+
+  }
+
+console.log(series);
   Highcharts.chart(id, {
     "chart": {
       "polar": true,
@@ -205,16 +260,10 @@ function hemispherePlot(id, distribution) {
       "formatter": getTooltip(distribution.constructor)
     },
     "subtitle": {
-      "text": getTitle(distribution.constructor),
-      "style": { 
-        "fontSize": "16px"
-      }
+      "text": ""
     },
     "title": {
-      "text": "",
-      "style": { 
-        "fontSize": "26px"
-      }
+      "text": getTitle(distribution.constructor)
     },
     "pane": {
       "startAngle": 0,
@@ -254,34 +303,7 @@ function hemispherePlot(id, distribution) {
         "animation": ENABLE_ANIMATION,
       }
     },
-    "series": [{
-      "name": getTitle(distribution.constructor),
-      "data": data,
-      "type": "scatter",
-      "marker": {
-        "symbol": "circle",
-        "lineWidth": 1,
-      }
-    }, {
-      "name": "Mean Vector",
-      "data": new Array(mean),
-      "type": "scatter",
-      "marker": {
-        "radius": 6,
-        "symbol": "circle",
-        "lineWidth": 2,
-      }
-    }, {
-      "name": "95% Confidence Interval",
-      "data": ellipse,
-      "type": "line",
-      "color": HIGHCHARTS_ORANGE,
-      "enableMouseTracking": false,
-      "dashStyle": "ShortDash",
-      "marker": {
-        "enabled": false
-      }
-    }]
+    "series": series
   });
 
 }
