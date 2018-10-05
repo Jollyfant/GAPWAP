@@ -231,7 +231,7 @@ function hemispherePlot(id, distribution) {
       "max": 90,
     },
     "credits": {
-      "text": "GAPWAP.org (" + getProjectionDescription + ")",
+      "text": "GAPWAP.org (" + getProjectionDescription() + ")",
       "href": ""
     },
     "xAxis": {
