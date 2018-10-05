@@ -42,3 +42,9 @@ document.getElementById("button-submit").addEventListener("click", function(even
 });
 
 document.getElementById("button-submit").click();
+
+var e = new EulerPole(90, 0, 90)
+var p = new Pole(0, 0);
+
+var r =getRotatedPole(e, p)
+console.log(r);
