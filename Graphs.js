@@ -14,6 +14,19 @@ const HIGHCHARTS_WHITE = "#FFFFFF";
 
 Highcharts.seriesTypes.line.prototype.requireSorting = false;
 
+function getProjectionDescription() {
+
+  switch(PROJECTION_TYPE) {
+    case "AREA":
+      return "Equal Area Projection";
+    case "ANGLE":
+      return "Equal Angle Projection";
+    default:
+      throw(new Exception("Unknown projection type requested."));
+  }
+
+}
+
 function projectInclination(inc) {
 
   /*
@@ -218,7 +231,7 @@ function hemispherePlot(id, distribution) {
       "max": 90,
     },
     "credits": {
-      "text": "GAPWAP.org (Hemisphere Plot)",
+      "text": "GAPWAP.org (" + getProjectionDescription + ")",
       "href": ""
     },
     "xAxis": {
