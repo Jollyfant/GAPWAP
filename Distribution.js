@@ -118,7 +118,16 @@ DirectionDistribution.prototype.transformCreer = function() {
 
 }
 
-Distribution.prototype.getConfidenceEllipse = function() {
+Distribution.prototype.getConfidenceEllipseDeenen = function() {
+
+  return new Array().concat(
+    this.getConfidenceEllipse(this.confidenceMin),
+    this.getConfidenceEllipse(this.confidenceMax),
+  );
+
+}
+
+Distribution.prototype.getConfidenceEllipse = function(angle) {
 
   /*
    * Function Distribution.getConfidenceEllipse
@@ -128,12 +137,18 @@ Distribution.prototype.getConfidenceEllipse = function() {
   // Define the number of discrete points on an ellipse
   const NUMBER_OF_POINTS = 51;
 
+  if(angle === undefined) {
+    angle = this.confidence;
+  }
+
   var vectors = new Array();
 
   // Create a circle around the pole with angle confidence
   for(var i = 0; i < NUMBER_OF_POINTS; i++) {
-    vectors.push(new this.vectorType((i * 360) / (NUMBER_OF_POINTS - 1), 90 - this.confidence));
+    vectors.push(new this.vectorType((i * 360) / (NUMBER_OF_POINTS - 1), 90 - angle));
   }
+
+  vectors.push(null);
 
   // Handle the correct distribution type
   if(this.constructor === PoleDistribution) {
@@ -203,6 +218,10 @@ Distribution.prototype.rotateVector = function(azimuth, plunge, vector) {
    * Function Direction.rotateTo
    * Rotates a direction to azimuth, plunge
    */
+
+  if(vector === null) {
+    return null;
+  }
 
   // Convert to radians
   var azimuth = azimuth * RADIANS;
@@ -287,6 +306,10 @@ Distribution.prototype.meanDirection = function() {
   var zSum = 0;
 
   this.vectors.forEach(function(vector) {
+
+    if(vector === null) {
+      return;
+    }
 
     var coordinates = vector.toCartesian();
 
