@@ -6,7 +6,6 @@ const DEGREE_SYMBOL = "\u00B0";
 const __DEBUG__ = true;
 
 // Example 
-
 // The direction is the mean direction published in the literature
 var direction = new Direction(0, 0);
 
