@@ -26,6 +26,17 @@ Direction.prototype.unit = function() {
 
 }
 
+Direction.prototype.asArray = function() {
+
+  /*
+   * Function Pole.asArray
+   * Returns the direction declination, inclination as an array
+   */
+
+  return new Array(this.dec, this.inc);
+
+}
+
 Direction.prototype.paleoLatitude = function() {
 
   /*

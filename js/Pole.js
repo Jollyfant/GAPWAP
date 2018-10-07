@@ -14,6 +14,17 @@ var Pole = function(longitude, latitude, length) {
 
 }
 
+Pole.prototype.asArray = function() {
+
+  /*
+   * Function Pole.asArray
+   * Returns the pole longitude, latitude as an array
+   */
+
+  return new Array(this.lng, this.lat);
+
+}
+
 Pole.prototype.toCartesian = function() {
 
   /*

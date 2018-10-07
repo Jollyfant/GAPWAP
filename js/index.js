@@ -4,6 +4,7 @@ const RADIANS = Math.PI / 180;
 const PROJECTION_TYPE = "AREA";
 const DEGREE_SYMBOL = "\u00B0";
 const __DEBUG__ = true;
+const __VERSION__ = "0.0.1";
 
 // Example 
 // Test branch
@@ -27,11 +28,11 @@ document.getElementById("button-submit").addEventListener("click", function(even
 
   if(distribution === "poles") {
     var pole = site.poleFrom(direction);
-    var samples = fisherianDistribution(PoleDistribution, N, K);
-    var rotated = samples.rotateTo(pole.lng, pole.lat - 90);
+    var samples = new fisherianDistribution(PoleDistribution, N, K);
+    var rotated = samples.rotateTo(pole.lng, pole.lat);
   } else {
-    var samples = fisherianDistribution(DirectionDistribution, N, K);
-    var rotated = samples.rotateTo(direction.dec, direction.inc - 90);
+    var samples = new fisherianDistribution(DirectionDistribution, N, K);
+    var rotated = samples.rotateTo(direction.dec, direction.inc);
   }
 
   var loc = new Location(site, rotated);
@@ -42,9 +43,3 @@ document.getElementById("button-submit").addEventListener("click", function(even
 });
 
 document.getElementById("button-submit").click();
-
-var e = new EulerPole(90, 0, 90)
-var p = new Pole(0, 0);
-
-var r =getRotatedPole(e, p)
-console.log(r);

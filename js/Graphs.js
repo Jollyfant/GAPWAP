@@ -16,6 +16,11 @@ Highcharts.seriesTypes.line.prototype.requireSorting = false;
 
 function getProjectionDescription() {
 
+  /*
+   * Function getProjectionDescription
+   * Returns the description that belongs to the projection type
+   */
+
   switch(PROJECTION_TYPE) {
     case "AREA":
       return "Equal Area Projection";
@@ -201,10 +206,6 @@ function hemispherePlot(id, distribution) {
   // Get the confidence interval around the mean
   var ellipse = distribution.getConfidenceEllipse().map(prepareDirectionData);
 
-  if(distribution.constructor === PoleDistribution) {
-    var deenen = distribution.getConfidenceEllipseDeenen().map(prepareDirectionData)
-  }
-
   var series = [{
     "name": getTitle(distribution.constructor),
     "data": data,
@@ -236,9 +237,12 @@ function hemispherePlot(id, distribution) {
 
   if(ENABLE_DEENEN && distribution.constructor === PoleDistribution) {
 
-    series.push(new Object({
+    // Get the Deenen et al., 2011 maximum & minimum scatter
+    var deenen = distribution.getConfidenceEllipseDeenen();
+
+    series.push({
       "name": "Deenen Criteria",
-      "data": distribution.getConfidenceEllipseDeenen().map(prepareDirectionData),
+      "data": deenen.maximum.map(prepareDirectionData),
       "type": "line",
       "color": HIGHCHARTS_GREEN,
       "enableMouseTracking": false,
@@ -246,11 +250,20 @@ function hemispherePlot(id, distribution) {
       "marker": { 
         "enabled": false
       } 
-    }));
+    }, {
+      "linkedTo": ":previous",
+      "data": deenen.minimum.map(prepareDirectionData),
+      "type": "line",
+      "color": HIGHCHARTS_GREEN,
+      "enableMouseTracking": false,
+      "dashStyle": "ShortDash",
+      "marker": { 
+        "enabled": false
+      }
+    });
 
   }
 
-console.log(series);
   Highcharts.chart(id, {
     "chart": {
       "polar": true,

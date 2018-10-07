@@ -17,7 +17,7 @@ var Site = function(longitude, latitude, age) {
 Site.prototype.poleFrom = function(direction) {
 
   /*
-   * Function Pole.directionAt
+   * Function Site.poleFrom
    * Returns the pole for this site from a given direction
    */
 
@@ -27,33 +27,29 @@ Site.prototype.poleFrom = function(direction) {
   }
 
   // Convert to radians
-  var slat = this.latitude * RADIANS;
-  var slong = this.longitude * RADIANS;
-  var dec = direction.dec * RADIANS;
-  var inc = direction.inc * RADIANS;
+  var siteLatitude = this.latitude * RADIANS;
+  var siteLongitude = this.longitude * RADIANS;
+  var declination = direction.dec * RADIANS;
+  var inclination = direction.inc * RADIANS;
 
-  var p = 0.5 * Math.PI - Math.atan(0.5 * Math.tan(inc));
-  var plat = Math.asin(Math.sin(slat) * Math.cos(p) + Math.cos(slat) * Math.sin(p) * Math.cos(dec))
-  var beta = Math.asin(Math.sin(p) * Math.sin(dec) / Math.cos(plat));
+  var p = 0.5 * Math.PI - Math.atan(0.5 * Math.tan(inclination));
+  var poleLatitude = Math.asin(Math.sin(siteLatitude) * Math.cos(p) + Math.cos(siteLatitude) * Math.sin(p) * Math.cos(declination))
+  var beta = Math.asin(Math.sin(p) * Math.sin(declination) / Math.cos(poleLatitude));
 
-  if(isNaN(beta)) {
-    beta = 0;
-  }
-
-  if((Math.cos(p) - Math.sin(plat) * Math.sin(slat)) < 0) {
-    var plong = slong - beta + Math.PI;
+  if(Math.cos(p) - Math.sin(poleLatitude) * Math.sin(siteLatitude) < 0) {
+    var poleLongitude = siteLongitude + Math.PI - beta;
   } else {
-    var plong = slong + beta;
+    var poleLongitude = siteLongitude + beta;
   }
 	
   // Bind the plate longitude between [0, 360]
-  if(plong < 0) {
-    plong += 2 * Math.PI;
+  if(poleLongitude < 0) {
+    poleLongitude += 2 * Math.PI;
   }
 
   return new Pole(
-    plong / RADIANS,
-    plat / RADIANS
+    poleLongitude / RADIANS,
+    poleLatitude / RADIANS
   );
 
 }
@@ -61,7 +57,7 @@ Site.prototype.poleFrom = function(direction) {
 Site.prototype.directionFrom = function(pole) {
 
   /*
-   * Function Pole.directionAt
+   * Function Site.directionFrom
    * Returns the direction for this pole at a given site location
    */
 
@@ -76,7 +72,7 @@ Site.prototype.directionFrom = function(pole) {
   var poleLat = pole.lat * RADIANS;
   var poleLong = pole.lng * RADIANS
 
-  // Make sure siteLong and pole & site longitudes are in the same domain
+  // Make sure siteLong and pole & site longitudes are in the same range
   if(siteLong < 0) {
     siteLong += 2 * Math.PI;
   }
@@ -85,7 +81,6 @@ Site.prototype.directionFrom = function(pole) {
     poleLong += 2 * Math.PI;
   }
 
-  // Get some standard variables
   var cosp = Math.sin(poleLat) * Math.sin(siteLat) + Math.cos(poleLat) * Math.cos(siteLat) * Math.cos(poleLong - siteLong);
   var sinp = Math.sqrt(1 - Math.pow(cosp, 2));
 

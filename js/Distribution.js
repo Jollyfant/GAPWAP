@@ -7,29 +7,43 @@ var Distribution = function(vectors) {
    * Wrapper for a Fisherian distribution
    */
 
+  // Save the passed vectors (Pole or Direction)
   this.vectors = vectors;
 
   this.mean = this.meanDirection();
 
+  // Fisher parameters
   this.R = this.mean.length;
   this.N = vectors.length;
   this.dispersion = this.getDispersion(this.N, this.R);
-  this.confidence = this.confidenceInterval();
+  this.confidence = this.confidenceInterval(this.N, this.R);
 
 }
 
-var fisherianDistribution = function(Class, n, k) {
+var fisherianDistribution = function(DistributionClass, n, k) {
 
-  function pseudoDirection(vectorType, k) {
+  /*
+   * Class fisherianDistribution
+   * Wrapper for sampling Fisherian distributions of a certain class:
+   * DirectionDistribution or PoleDistribution
+   */
+
+  function pseudoVector(vectorType, k) {
+
+    /*
+     * Function fisherianDistribution::pseudoVector
+     * Returns a pseudo-random vector (Pole or Direction) from a distribution with dispersion k
+     */
 
     // Get a random declination (0 inclusive; 1 exclusive)
     var x = 2 * Math.PI * Math.random();
 	  
     // Get a random inclination
     var L = Math.exp(-2 * k);
-    var a = (Math.random() * (1 - L) + L);
-    var fac = Math.sqrt(-Math.log(a) / (2 * k));
-    var y = 90 - (2 * Math.asin(fac));
+    var a = Math.random() * (1 - L) + L;
+    var fac = 2 * Math.asin(Math.sqrt(-Math.log(a) / (2 * k)));
+
+    var y = 0.5 * Math.PI - fac;
     
     // Return the appropriate vector class (Pole or Direction)
     return new vectorType(
@@ -40,13 +54,13 @@ var fisherianDistribution = function(Class, n, k) {
   }
 
   var vectors = new Array();
-	
+
   // Draw N pseudo-random samples
   for(var i = 0; i < n; i++) { 
-    vectors.push(pseudoDirection(Class.prototype.vectorType, k));
+    vectors.push(pseudoVector(DistributionClass.prototype.vectorType, k));
   }
 
-  return new Class(vectors);
+  return new DistributionClass(vectors);
 
 }
 
@@ -120,10 +134,15 @@ DirectionDistribution.prototype.transformCreer = function() {
 
 Distribution.prototype.getConfidenceEllipseDeenen = function() {
 
-  return new Array().concat(
-    this.getConfidenceEllipse(this.confidenceMin),
-    this.getConfidenceEllipse(this.confidenceMax),
-  );
+  /*
+   * Function Distribution.getConfidenceEllipseDeenen
+   * Returns the A95Max, A95Min confidence ellipses
+   */
+
+  return {
+    "minimum": this.getConfidenceEllipse(this.confidenceMin),
+    "maximum": this.getConfidenceEllipse(this.confidenceMax)
+  }
 
 }
 
@@ -148,14 +167,8 @@ Distribution.prototype.getConfidenceEllipse = function(angle) {
     vectors.push(new this.vectorType((i * 360) / (NUMBER_OF_POINTS - 1), 90 - angle));
   }
 
-  vectors.push(null);
-
   // Handle the correct distribution type
-  if(this.constructor === PoleDistribution) {
-    return new this.constructor(vectors).rotateTo(this.mean.lng, this.mean.lat - 90).vectors;
-  } else if(this.constructor === DirectionDistribution) {
-    return new this.constructor(vectors).rotateTo(this.mean.dec, this.mean.inc - 90).vectors;
-  }
+  return new PoleDistribution(vectors).rotateTo(...this.mean.asArray()).vectors;
 
 }
 
@@ -170,11 +183,8 @@ PoleDistribution.prototype.toDirections = function(site) {
     throw(new Exception("Input is not of class Site."));
   }
 
-  var directions = this.vectors.map(function(pole) {
-    return site.directionFrom(pole);
-  });
-
-  return new DirectionDistribution(directions);
+  // Return a new Direction distribution
+  return new DirectionDistribution(this.vectors.map(site.directionFrom, site));
 
 }
 
@@ -189,11 +199,8 @@ DirectionDistribution.prototype.toPoles = function(site) {
     throw(new Exception("Input is not of class Site."));
   }
 
-  var poles = this.vectors.map(function(direction) {
-    return site.poleFrom(direction);
-  });
-
-  return new PoleDistribution(poles);
+  // Return a new Pole distribution
+  return new PoleDistribution(this.vectors.map(site.poleFrom, site));
 
 }
 
@@ -204,60 +211,19 @@ Distribution.prototype.rotateTo = function(azimuth, plunge) {
    * Rotates a distribution to a specific azimuth, plunge and returns a new distribution
    */
 
-  // Create a new bounded function
-  var rotateFunction = this.rotateVector.bind(this, azimuth, plunge);
+  function rotateVector(vector) {
 
-  // The rotation should return a new Distribution of the same type
-  return new this.constructor(this.vectors.map(rotateFunction));
+    /*
+     * Function Distribution.rotateTo::rotateVector
+     * Rotates a single vector to given azimuth/plunge
+     */
 
-}
+    return vector.toCartesian().rotateTo(azimuth, plunge).toVector(vector.constructor);
 
-Distribution.prototype.rotateVector = function(azimuth, plunge, vector) {
-
-  /*
-   * Function Direction.rotateTo
-   * Rotates a direction to azimuth, plunge
-   */
-
-  if(vector === null) {
-    return null;
   }
 
-  // Convert to radians
-  var azimuth = azimuth * RADIANS;
-  var plunge = plunge * RADIANS;
-
-  // Create the rotation matrix
-  var rotationMatrix = new Array(
-    new Array(Math.cos(plunge) * Math.cos(azimuth), -Math.sin(azimuth), -Math.sin(plunge) * Math.cos(azimuth)),
-    new Array(Math.cos(plunge) * Math.sin(azimuth), Math.cos(azimuth), -Math.sin(plunge) * Math.sin(azimuth)),
-    new Array(Math.sin(plunge), 0, Math.cos(plunge))
-  );
-
-  // Work with arrays for easy multiplication
-  var vector = vector.toCartesian().toArray();
-
-  var rotatedVector = new Array(0, 0, 0);
-
-  // Do matrix-vector multiplication
-  // V'i = RijVj (summation convention)
-  for(var i = 0; i < 3; i++) {
-    for(var j = 0; j < 3; j++) {
-      rotatedVector[i] += rotationMatrix[i][j] * vector[j];
-    }
-  }
-
-  // Return a direction with the rotated vector
-  var coordinates = new Coordinates(...rotatedVector);
-
-  // Make sure we use the right constructor
-  if(this.constructor === PoleDistribution) {
-    return coordinates.toPole(this);
-  } else if(this.constructor === DirectionDistribution) {
-    return coordinates.toDirection(this);
-  } else {
-    throw(new Exception("Got unexpected constructor."));
-  }
+  // Create a new instance of the constructor (i.e. PoleDistribution or DirectionDistribution)
+  return new this.constructor(this.vectors.map(rotateVector));
 
 }
 
@@ -272,15 +238,12 @@ Distribution.prototype.getDispersion = function(N, R) {
 
 }
 
-Distribution.prototype.confidenceInterval = function(confidence) {
+Distribution.prototype.confidenceInterval = function(N, R, confidence) {
 
   /*
    * Function Distribution.confidenceInterval
    * Returns the confidence value of a distribution
    */
-
-  var N = this.N;
-  var R = this.R;
 
   // Default to 95% confidence
   if(confidence === undefined) {
@@ -305,13 +268,7 @@ Distribution.prototype.meanDirection = function() {
   var ySum = 0
   var zSum = 0;
 
-  this.vectors.forEach(function(vector) {
-
-    if(vector === null) {
-      return;
-    }
-
-    var coordinates = vector.toCartesian();
+  this.vectors.map(vector => vector.toCartesian()).forEach(function(coordinates) {
 
     xSum += coordinates.x;
     ySum += coordinates.y;
@@ -319,13 +276,6 @@ Distribution.prototype.meanDirection = function() {
 
   });
 
-  // Return a new direction
-  if(this.constructor === DirectionDistribution) {
-    return new Coordinates(xSum, ySum, zSum).toDirection();
-  } else if(this.constructor === PoleDistribution) {
-    return new Coordinates(xSum, ySum, zSum).toPole();
-  } else {
-    throw(new Exception("Got unexpected constructor."));
-  }
+  return new Coordinates(xSum, ySum, zSum).toVector(this.vectorType);
 
 }

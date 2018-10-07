@@ -13,42 +13,70 @@ var Coordinates = function(x, y, z) {
 
 }
 
-Coordinates.prototype.toPole = function() {
-
-  var lng = Math.atan2(this.y, this.x);
-  var lat = Math.asin(this.z / this.length);
-
-  // Keep longitude from [0, 360]
-  if(lng < 0) {
-    lng += 2 * Math.PI;
-  }
-
-  return new Pole(
-    lng / RADIANS,
-    lat / RADIANS,
-    this.length
-  );
-
-}
-
-Coordinates.prototype.toDirection = function() {
+Coordinates.prototype.toVector = function(vectorType) {
 
   /*
    * Function Coordinates.toDirection
    * Returns Cartesian coordinates represented as a direction
    */
 
-  var dec = (360 + (Math.atan2(this.y, this.x) / RADIANS)) % 360; 
-  var inc = Math.asin(this.z / this.length) / RADIANS;
-	
-  return new Direction(
-    dec,
-    inc,
+  var x = Math.atan2(this.y, this.x);
+  var y = Math.asin(this.z / this.length);
+
+  // Keep the vector (declination or longitude) between [0, 360]
+  if(x < 0) {
+    x = x + (2 * Math.PI);
+  }
+
+  // Return a new Pole or Direction
+  return new vectorType(
+    x / RADIANS,
+    y / RADIANS,
     this.length
   );
 
+}
+
+Coordinates.prototype.rotate = function(rotationMatrix) {
+
+  /*
+   * Function Coordinates.rotate
+   * Rotates itself against the rotation matrix
+   */
+
+  var vector = this.toArray();
+  var rotatedVector = new Array(0, 0, 0);
+
+  // Do the matrix multiplication
+  for(var i = 0; i < 3; i++) {
+    for(var j = 0; j < 3; j++) {
+      rotatedVector[i] += rotationMatrix[i][j] * vector[j];
+    }
+  }
+
+  // Return the rotated coordinates
+  return new Coordinates(...rotatedVector);
 
 }
+
+Coordinates.prototype.rotateTo = function(azimuth, plunge) {
+
+  /*
+   * Function Coordinates.rotateTo
+   * Rotates a direction to azimuth, plunge
+   */
+
+  // Convert to radians
+  var azimuth = azimuth * RADIANS;
+  var plunge = plunge * RADIANS;
+
+  // Create the rotation matrix
+  var rotationMatrix = getRotationMatrix(azimuth, plunge);
+
+  return this.rotate(rotationMatrix);
+
+}
+
 
 Coordinates.prototype.toArray = function() {
 

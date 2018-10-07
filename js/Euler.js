@@ -14,6 +14,21 @@ var EulerPole = function(longitude, latitude, angle) {
 EulerPole.prototype = Object.create(Pole.prototype);
 EulerPole.prototype.constructor = EulerPole;
 
+function getRotationMatrix(lambda, phi) {
+
+  /*
+   * Function getRotationMatrix
+   * Returns the rotation matrix
+   */
+
+  return new Array(
+    new Array(Math.cos(lambda) * Math.sin(phi), -Math.sin(lambda), Math.cos(phi) * Math.cos(lambda)),
+    new Array(Math.sin(phi) * Math.sin(lambda), Math.cos(lambda), Math.sin(lambda) * Math.cos(phi)),
+    new Array(-Math.cos(phi), 0, Math.sin(phi))
+  );
+
+}
+
 function getRotatedPole(eulerPole, pole) {
 
   /*
@@ -32,7 +47,11 @@ function getRotatedPole(eulerPole, pole) {
      * Returns an empty 2D matrix
      */
 
-    return new Array(nullVector(), nullVector(), nullVector());
+    return new Array(
+      nullVector(),
+      nullVector(),
+      nullVector()
+    );
 
   }
 
@@ -49,32 +68,21 @@ function getRotatedPole(eulerPole, pole) {
 
   // Convert to radians
   var phiEuler = eulerPole.lng * RADIANS;
-  var rotationAngle = eulerPole.angle * RADIANS;
   var thetaEuler = eulerPole.lat * RADIANS;
-
-  var thetaPole = pole.lat * RADIANS;
-  var phiPole = pole.lng * RADIANS;
-  
+  var rotationAngle = eulerPole.angle * RADIANS;
+ 
   // Construct transformation matrix L
-  var L = new Array(
-    new Array(Math.cos(phiEuler) * Math.sin(thetaEuler), -Math.sin(phiEuler), Math.cos(phiEuler) * Math.cos(thetaEuler)),
-    new Array(Math.sin(phiEuler) * Math.sin(thetaEuler), Math.cos(phiEuler), Math.sin(phiEuler) * Math.cos(thetaEuler)),
-    new Array(-Math.cos(thetaEuler), 0, Math.sin(thetaEuler))
-  );
-  
-  // Store reference pole to Cartesian coordinates in P vector
-  var P = new Array( 
-    Math.cos(phiPole) * Math.cos(thetaPole), 
-    Math.sin(phiPole) * Math.cos(thetaPole), 
-    Math.sin(thetaPole)
-  );
+  var L = getRotationMatrix(phiEuler, thetaEuler);
   
   // Construct rotation matrix
   var R = new Array(
-    new Array(Math.cos(rotationAngle), Math.sin(rotationAngle), 0),
-    new Array(-Math.sin(rotationAngle), Math.cos(rotationAngle), 0),
+    new Array(Math.cos(rotationAngle), -Math.sin(rotationAngle), 0),
+    new Array(Math.sin(rotationAngle), Math.cos(rotationAngle), 0),
     new Array(0, 0, 1)
   );
+
+  var M = nullMatrix();
+  var B = nullMatrix();
 
   /*
    * [L] [R] [Lt] <P>
@@ -84,7 +92,6 @@ function getRotatedPole(eulerPole, pole) {
    */
   
   //Multiply [L] with [R] to [M]
-  var M = nullMatrix();
   for(var i = 0; i < 3; i++) {
     for(var j = 0; j < 3; j++) {
       for(var k = 0; k < 3; k++) {
@@ -94,7 +101,6 @@ function getRotatedPole(eulerPole, pole) {
   }
   
   //Multiply [M] with [Lt] to [B]
-  var B = nullMatrix();
   for(var i = 0; i < 3; i++) {
     for(var j = 0; j < 3; j++) {
       for(var k = 0; k < 3; k++) {
@@ -102,15 +108,9 @@ function getRotatedPole(eulerPole, pole) {
       }
     }
   }
-  
-  //Multiply [B] with <P> to <X>
-  var rotatedVector = nullVector();
-  for(var i = 0; i < 3; i++) {
-    for(var j = 0; j < 3; j++) {
-      rotatedVector[i] += B[i][j] * P[j];
-    }
-  }
-  	
-  return new Coordinates(...rotatedVector).toPole();
+
+  // Rotate the pole using the rotation matrix.
+  // Always return a new Pole instance
+  return pole.toCartesian().rotate(B).toVector(Pole);
 
 }
