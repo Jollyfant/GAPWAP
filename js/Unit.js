@@ -11,6 +11,19 @@ function assert(statement) {
 
 }
 
+function fEquals(one, two) {
+
+  /*
+   * Function fEquals
+   * Test the equality of two floats to a given precision
+   */
+
+  const PRECISION = 10;
+
+  return one.toPrecision(PRECISION) === two.toPrecision(PRECISION);
+
+}
+
 function testEulerRotation() {
 
   /*
@@ -31,8 +44,8 @@ function testEulerRotation() {
     
     var rotatedPole = getRotatedPole(eulerPole, pole);
     
-    assert(parseInt(rotatedPole.lng) === 33);
-    assert(parseInt(rotatedPole.lat) === 23);
+    assert(fEquals(rotatedPole.lng, 33));
+    assert(fEquals(rotatedPole.lat, 23));
 
   }
 
@@ -49,8 +62,8 @@ function testEulerRotation() {
     
     var rotatedPole = getRotatedPole(eulerPole, pole);
 
-    assert(parseInt(rotatedPole.lng) === 170);
-    assert(parseInt(rotatedPole.lat) === 23);
+    assert(fEquals(rotatedPole.lng, 170));
+    assert(fEquals(rotatedPole.lat, 23));
 
   }
 
@@ -67,8 +80,8 @@ function testEulerRotation() {
     
     var rotatedPole = getRotatedPole(eulerPole, pole);
 
-    assert(parseInt(rotatedPole.lng) === 90);
-    assert(parseInt(rotatedPole.lat) === 45);
+    assert(fEquals(rotatedPole.lng, 90));
+    assert(fEquals(rotatedPole.lat, 45));
 
   }
 
@@ -85,8 +98,8 @@ function testEulerRotation() {
     
     var rotatedPole = getRotatedPole(eulerPole, pole);
 
-    assert(parseInt(rotatedPole.lng) === 90);
-    assert(parseInt(rotatedPole.lat) === -45);
+    assert(fEquals(rotatedPole.lng, 90));
+    assert(fEquals(rotatedPole.lat, -45));
 
   }
 

@@ -161,10 +161,11 @@ Distribution.prototype.getConfidenceEllipse = function(angle) {
   }
 
   var vectors = new Array();
+  var angle = 90 - angle;
 
   // Create a circle around the pole with angle confidence
   for(var i = 0; i < NUMBER_OF_POINTS; i++) {
-    vectors.push(new this.vectorType((i * 360) / (NUMBER_OF_POINTS - 1), 90 - angle));
+    vectors.push(new this.vectorType((i * 360) / (NUMBER_OF_POINTS - 1), angle));
   }
 
   // Handle the correct distribution type

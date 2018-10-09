@@ -14,7 +14,7 @@ var EulerPole = function(longitude, latitude, angle) {
 EulerPole.prototype = Object.create(Pole.prototype);
 EulerPole.prototype.constructor = EulerPole;
 
-function getRotationMatrix(lambda, phi) {
+function getRotationMatrix(phi, lambda) {
 
   /*
    * Function getRotationMatrix
@@ -22,9 +22,9 @@ function getRotationMatrix(lambda, phi) {
    */
 
   return new Array(
-    new Array(Math.cos(lambda) * Math.sin(phi), -Math.sin(lambda), Math.cos(phi) * Math.cos(lambda)),
-    new Array(Math.sin(phi) * Math.sin(lambda), Math.cos(lambda), Math.sin(lambda) * Math.cos(phi)),
-    new Array(-Math.cos(phi), 0, Math.sin(phi))
+    new Array(Math.sin(lambda) * Math.cos(phi), -Math.sin(phi), Math.cos(lambda) * Math.cos(phi)),
+    new Array(Math.sin(lambda) * Math.sin(phi), Math.cos(phi), Math.sin(phi) * Math.cos(lambda)),
+    new Array(-Math.cos(lambda), 0, Math.sin(lambda))
   );
 
 }
